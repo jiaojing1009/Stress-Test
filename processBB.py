@@ -2,20 +2,23 @@
 # -*- coding: UTF-8 -*-
 
 from flask import request, Flask
-import threading
 import queue
 import json
 import time
 import re
+import threading
+import numpy as np
+import urllib.request
+import cv2
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
 app = Flask(__name__)
 
-q = queue.Queue(1000)  # 建立一个队列长度为1000，较长的队列可以作为缓冲
+q = queue.Queue(2000)  # 建立一个队列长度为1000，较长的队列可以作为缓冲
 executor = ThreadPoolExecutor(max_workers=127)  # 线程池
 process = ProcessPoolExecutor(10)
-
+# lock = threading.Lock
 
 # 封装数据
 class Item:
@@ -94,6 +97,11 @@ def handleAI(queue, batch_size):
         data = str(item.data, 'utf-8')
         data = re.sub('\'', '\"', data)
         data = json.loads(data)
+        # 耗时操作
+        url = data['url']
+        resp = urllib.request.urlopen(url)
+        image = np.asarray(bytearray(resp.read()), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
         rects = data['ts']
         rects = int(rects)
         t = time.time()
@@ -111,12 +119,11 @@ def handleAI(queue, batch_size):
 
 if __name__ == '__main__':
 
-    # 最多创建10个进程执行getRequest方法
+    #` 最多创建10个进程执行getRequest方法
     for i in range(10):
         process.submit(getRequest)
 
-    # 最多创建3个线程执行revQueue方法
-    for i in range(3):
-        t = executor.submit(revQueue, 10)
-
-    app.run()
+    t = threading.Thread(target=revQueue, args=(10,))  # 创建线程执行
+    t.setDaemon(True)
+    t.start()
+    app.run(threaded=True)
