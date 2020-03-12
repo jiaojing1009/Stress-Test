@@ -1,6 +1,6 @@
 # 报告文档：
 
-![运行模型](https://github.com/jiaojing1009/Stress-Test/blob/master/%E8%BF%90%E8%A1%8C%E6%A8%A1%E5%9E%8B.png)
+![运行模型](运行模型.png)
 
 
 
